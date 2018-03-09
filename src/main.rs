@@ -2,6 +2,10 @@ extern crate rand;
 use rand::distributions::{Exp, IndependentSample};
 use rand::Rng;
 
+#[macro_use]
+extern crate clap;
+use clap::App;
+
 
 macro_rules! gen_exp {
     ($x: expr) => {
@@ -95,6 +99,9 @@ fn gen_tree(tree_size: u64) -> NewickNode{
 }
 
 fn main(){
-    let t = gen_tree(100);
+    let yaml = load_yaml!("cli.yaml");
+    let matches = App::from_yaml(yaml).get_matches();
+    let tree_size = value_t_or_exit!(matches, "size", u64);
+    let t = gen_tree(tree_size);
     println!("{}", t.to_newick());
 }

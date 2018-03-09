@@ -5,3 +5,4 @@ authors = ["Ben Bettisworth <bwbettisworth@alaska.edu>"]
 
 [dependencies]
 rand = "0.4.2"
+clap = {version = "2", features = ["yaml"]}
