@@ -18,17 +18,6 @@ macro_rules! gen_exp {
     };
 }
 
-struct CharacterRange{
-    current: usize,
-    max    : usize,
-}
-
-impl CharacterRange{
-    fn new(max:usize) -> CharacterRange{
-        CharacterRange{current: 0, max:max}
-    }
-}
-
 #[derive(Debug)]
 enum NewickNode{
     Root{left_child: Box<NewickNode>, right_child: Box<NewickNode>},
@@ -69,12 +58,26 @@ fn new_root(lc: NewickNode, rc: NewickNode) -> NewickNode{
     NewickNode::Root{left_child: Box::new(lc), right_child: Box::new(rc)}
 }
 
-fn gen_tree(tree_size: u8) -> NewickNode{
+fn generate_labels(count: u64) -> Vec<String>{
+    let mut labels = Vec::new();
+    let bases = (count as f64).log(26.0).ceil() as u32;
+    for i in 0 .. count{
+        let mut label = String::from("");
+        for b in 0u32 .. bases{
+            let c1 = i % 26u64.pow(bases - b);
+            let c2 = (c1 / 26u64.pow(bases - b - 1)) as u8 + 'a' as u8; 
+            label += &(c2 as char).to_string();
+        }
+        labels.push(label);
+    }
+    labels
+}
+
+fn gen_tree(tree_size: u64) -> NewickNode{
     let mut tree = Vec::with_capacity(tree_size as usize);
-    let label_start = 'A' as u8;
-    let label_end = label_start + tree_size;
-    for l in label_start .. label_end{
-        tree.push(new_leaf((l as char).to_string()));
+    let labels = generate_labels(tree_size);
+    for l in labels{
+        tree.push(new_leaf(l));
     }
 
     let mut rng = rand::thread_rng();
@@ -92,6 +95,6 @@ fn gen_tree(tree_size: u8) -> NewickNode{
 }
 
 fn main(){
-    let t = gen_tree(3u8);
+    let t = gen_tree(100);
     println!("{}", t.to_newick());
 }
