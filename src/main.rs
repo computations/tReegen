@@ -1,10 +1,33 @@
 extern crate rand;
-use rand::distributions::Exp;
-use rand::distributions::Sample;
-use rand::XorShiftRng;
-use rand::SeedableRng;
+use rand::distributions::{Exp, IndependentSample};
 use rand::Rng;
 
+
+macro_rules! gen_exp {
+    ($x: expr) => {
+        {
+            let exp = Exp::new($x);
+            exp.ind_sample(&mut rand::thread_rng())
+        }
+    };
+    () => {
+        {
+            let exp = Exp::new(1.0);
+            exp.ind_sample(&mut rand::thread_rng())
+        }
+    };
+}
+
+struct CharacterRange{
+    current: usize,
+    max    : usize,
+}
+
+impl CharacterRange{
+    fn new(max:usize) -> CharacterRange{
+        CharacterRange{current: 0, max:max}
+    }
+}
 
 #[derive(Debug)]
 enum NewickNode{
@@ -24,18 +47,22 @@ impl NewickNode{
                     "):" + &format!("{:.4}", w)
             },
             &NewickNode::Root{left_child: ref lc, right_child: ref rc} =>  {
-                "(".to_string() + &lc.to_newick() + "," + &rc.to_newick() + ")"
+                "(".to_string() + &lc.to_newick() + "," + &rc.to_newick() + ");"
             },
         }
     }
 }
 
 fn new_leaf(l: String) -> NewickNode{
-    NewickNode::Leaf{weight: 0.1234, label:l}
+    NewickNode::Leaf{weight: gen_exp!(), label:l}
 }
 
 fn new_node(lc: NewickNode, rc: NewickNode) -> NewickNode{
-    NewickNode::Node{left_child: Box::new(lc), right_child: Box::new(rc), weight:0.13}
+    NewickNode::Node{
+        left_child: Box::new(lc), 
+        right_child: Box::new(rc), 
+        weight:gen_exp!(),
+    }
 }
 
 fn new_root(lc: NewickNode, rc: NewickNode) -> NewickNode{
@@ -50,14 +77,14 @@ fn gen_tree(tree_size: u8) -> NewickNode{
         tree.push(new_leaf((l as char).to_string()));
     }
 
-    let mut xorshift = XorShiftRng::from_seed();
+    let mut rng = rand::thread_rng();
 
     while tree.len() != 2{
-        let c1 = xorshift.gen_range(0, tree.len());
-        let c2 = xorshift.gen_range(0, tree.len());
-        assert!(c1 != c2);
-        let n = new_node(tree.pop().unwrap(), tree.pop().unwrap());
-        tree.push(n);
+        let roll = rng.gen_range(0, tree.len());
+        let l1 = tree.remove(roll);
+        let roll = rng.gen_range(0, tree.len());
+        let l2 = tree.remove(roll);
+        tree.push(new_node(l1, l2));
     }
 
     let r = new_root(tree.pop().unwrap(), tree.pop().unwrap());
@@ -65,6 +92,6 @@ fn gen_tree(tree_size: u8) -> NewickNode{
 }
 
 fn main(){
-    let t = gen_tree(10u8);
+    let t = gen_tree(3u8);
     println!("{}", t.to_newick());
 }
