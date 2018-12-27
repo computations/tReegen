@@ -1,5 +1,5 @@
 extern crate rand;
-use rand::distributions::{Exp, IndependentSample};
+use rand::distributions::{Exp, Distribution, Uniform, Beta};
 use rand::Rng;
 
 #[macro_use]
@@ -11,13 +11,43 @@ macro_rules! gen_exp {
     ($x: expr) => {
         {
             let exp = Exp::new($x);
-            exp.ind_sample(&mut rand::thread_rng())
+            exp.sample(&mut rand::thread_rng())
         }
     };
     () => {
         {
             let exp = Exp::new(1.0);
-            exp.ind_sample(&mut rand::thread_rng())
+            exp.sample(&mut rand::thread_rng())
+        }
+    };
+}
+
+macro_rules! gen_uniform {
+    ($x: expr, $y: expr) => {
+        {
+            let uni = Uniform::new($x, $y);
+            uni.sample(&mut rand::thread_rng())
+        }
+    };
+    () => {
+        {
+            let uni = Uniform::new(0.0, 1.0);
+            uni.sample(&mut rand::thread_rng())
+        }
+    };
+}
+
+macro_rules! gen_beta {
+    ($x: expr, $y: expr) => {
+        {
+            let beta = Beta::new($x, $y);
+            beta.sample(&mut rand::thread_rng())
+        }
+    };
+    () => {
+        {
+            let beta = Beta::new(2.0, 5.0);
+            beta.sample(&mut rand::thread_rng())
         }
     };
 }
@@ -36,7 +66,7 @@ impl NewickNode{
                 label.to_owned() + ":" + &format!("{:.4}", weight)
             },
             &NewickNode::Node{left_child: ref lc, right_child: ref rc, weight: w}=>  {
-                "(".to_string() + &lc.to_newick() + "," + &rc.to_newick() + 
+                "(".to_string() + &lc.to_newick() + "," + &rc.to_newick() +
                     "):" + &format!("{:.4}", w)
             },
             &NewickNode::Root{left_child: ref lc, right_child: ref rc} =>  {
@@ -47,14 +77,22 @@ impl NewickNode{
 }
 
 fn new_leaf(l: String) -> NewickNode{
-    NewickNode::Leaf{weight: gen_exp!(), label:l}
+    new_leaf_weightless(l, gen_exp!())
+}
+
+fn new_leaf_weightless(l: String, w: f64) -> NewickNode {
+    NewickNode::Leaf{weight: w, label:l}
 }
 
 fn new_node(lc: NewickNode, rc: NewickNode) -> NewickNode{
+    new_node_weightless(lc, rc, gen_exp!())
+}
+
+fn new_node_weightless(lc: NewickNode, rc: NewickNode, w: f64) -> NewickNode{
     NewickNode::Node{
-        left_child: Box::new(lc), 
-        right_child: Box::new(rc), 
-        weight:gen_exp!(),
+        left_child: Box::new(lc),
+        right_child: Box::new(rc),
+        weight:w,
     }
 }
 
@@ -69,7 +107,7 @@ fn generate_labels(count: u64) -> Vec<String>{
         let mut label = String::from("");
         for b in 0u32 .. bases{
             let c1 = i % 26u64.pow(bases - b);
-            let c2 = (c1 / 26u64.pow(bases - b - 1)) as u8 + 'a' as u8; 
+            let c2 = (c1 / 26u64.pow(bases - b - 1)) as u8 + 'a' as u8;
             label += &(c2 as char).to_string();
         }
         labels.push(label);
@@ -98,10 +136,35 @@ fn gen_tree(tree_size: u64) -> NewickNode{
     r
 }
 
+fn make_ultrametric(tree: NewickNode, left: f64) -> NewickNode {
+    match tree{
+        NewickNode::Root{left_child:lc, right_child:rc} => {
+            new_root(make_ultrametric(*lc, left), make_ultrametric(*rc, left))
+        }
+        NewickNode::Node{left_child:lc, right_child:rc, weight:_} =>{
+            let new_w = gen_beta!() * left;
+            let new_left = left - new_w;
+            new_node_weightless(make_ultrametric(*lc, new_left), make_ultrametric(*rc, new_left), new_w)
+        }
+        NewickNode::Leaf{label:l, weight:_}=>{
+            new_leaf_weightless(l, left)
+        }
+    }
+}
+
 fn main(){
     let yaml = load_yaml!("cli.yaml");
     let matches = App::from_yaml(yaml).get_matches();
     let tree_size = value_t_or_exit!(matches, "size", u64);
-    let t = gen_tree(tree_size);
+    let ultrametric = matches.is_present("u") || matches.is_present("ultrametric");
+    let tree_h = value_t!(matches, "tree_height", f64).unwrap_or(1.0);
+
+    let t = {
+        let mut t = gen_tree(tree_size);
+        if ultrametric {
+            t = make_ultrametric(t, tree_h);
+        }
+        t
+    };
     println!("{}", t.to_newick());
 }

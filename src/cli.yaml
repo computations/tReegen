@@ -9,3 +9,10 @@ args:
         value_name: TREE_SIZE
         takes_value: true
         required: true
+    - ultrametric:
+        short: u
+        long: ultrametric
+    - tree_height:
+        short: t
+        long: tree_height
+        takes_value: true
