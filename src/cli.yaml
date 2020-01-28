@@ -12,7 +12,7 @@ args:
     - ultrametric:
         short: u
         long: ultrametric
-    - tree_height:
+    - tree-height:
         short: t
         long: tree_height
         takes_value: true

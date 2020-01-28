@@ -16,7 +16,7 @@ macro_rules! gen_exp {
     };
     () => {
         {
-            let exp = Exp::new(1.0);
+            let exp = Exp::new(10.0);
             exp.sample(&mut rand::thread_rng())
         }
     };
@@ -77,7 +77,7 @@ impl NewickNode{
 }
 
 fn new_leaf(l: String) -> NewickNode{
-    new_leaf_weightless(l, gen_exp!())
+    new_leaf_weightless(l, gen_uniform!())
 }
 
 fn new_leaf_weightless(l: String, w: f64) -> NewickNode {
@@ -85,7 +85,7 @@ fn new_leaf_weightless(l: String, w: f64) -> NewickNode {
 }
 
 fn new_node(lc: NewickNode, rc: NewickNode) -> NewickNode{
-    new_node_weightless(lc, rc, gen_exp!())
+    new_node_weightless(lc, rc, gen_uniform!())
 }
 
 fn new_node_weightless(lc: NewickNode, rc: NewickNode, w: f64) -> NewickNode{
