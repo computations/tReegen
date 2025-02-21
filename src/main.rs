@@ -126,9 +126,9 @@ fn gen_tree(tree_size: u64) -> NewickNode{
 
     while tree.len() != 2{
         let roll = rng.gen_range(0, tree.len());
-        let l1 = tree.remove(roll);
+        let l1 = tree.swap_remove(roll);
         let roll = rng.gen_range(0, tree.len());
-        let l2 = tree.remove(roll);
+        let l2 = tree.swap_remove(roll);
         tree.push(new_node(l1, l2));
     }
 
