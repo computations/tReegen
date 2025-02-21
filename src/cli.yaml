@@ -1,6 +1,6 @@
 name: tReegen
 version: "1.0"
-author: Ben Bettisworth <bwbettisworth@alaska.edu>
+author: Ben Bettisworth <bwbettisworth@gmail.com>
 about: Generates a phylogenetic tree
 args:
     - size:
@@ -12,7 +12,7 @@ args:
     - ultrametric:
         short: u
         long: ultrametric
-    - tree-height:
-        short: t
-        long: tree_height
+    - tree_height:
+        short: h
+        long: height
         takes_value: true
