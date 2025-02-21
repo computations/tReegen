@@ -157,7 +157,7 @@ fn main(){
     let matches = App::from_yaml(yaml).get_matches();
     let tree_size = value_t_or_exit!(matches, "size", u64);
     let ultrametric = matches.is_present("u") || matches.is_present("ultrametric");
-    let tree_h = value_t!(matches, "tree_height", f64).unwrap_or(1.0);
+    let tree_h = value_t!(matches, "height", f64).unwrap_or(1.0);
 
     let t = {
         let mut t = gen_tree(tree_size);
