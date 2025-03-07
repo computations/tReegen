@@ -12,6 +12,9 @@ args:
     - ultrametric:
         short: u
         long: ultrametric
+    - nobranchlengths:
+        short: n
+        long: nobranchlengths
     - tree_height:
         short: h
         long: height
